@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Officer Portal - RPNGC Emergency Dispatch</title>
+    <link rel="stylesheet" href="/css/rpngc.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div class="login-overlay" id="login-overlay">
+        <div class="login-box">
+            <img src="/images/logo.jpg" alt="RPNGC Logo" class="login-logo">
+            <h2>Officer Login</h2>
+            <p>Royal Papua New Guinea Constabulary</p>
+            <hr class="login-divider">
+            <div class="form-group">
+                <label>Badge Number</label>
+                <input type="text" id="badge-input" placeholder="RPNGC-XXX">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password-input" placeholder="Enter password">
+            </div>
+            <button class="btn btn-blue" id="login-btn">Login</button>
+            <div id="login-error" class="error-msg"></div>
+        </div>
+    </div>
+
+    <header class="rpngc-header" style="display: none;" id="main-header">
+        <img src="/images/logo.jpg" alt="RPNGC Logo">
+        <div>
+            <h1>Royal Papua New Guinea Constabulary</h1>
+            <p>Officer Portal - <span id="officer-name"></span></p>
+        </div>
+        <a href="/" id="logout-btn">Logout</a>
+    </header>
+
+    <div class="rpngc-layout" style="display: none;" id="main-layout">
+        <aside class="rpngc-sidebar">
+            <div class="rpngc-sidebar-section">
+                <h3>Officer Profile</h3>
+                <div class="profile-card" id="profile-card"></div>
+                <div class="form-group" style="margin-top: 12px;">
+                    <label>Availability Status</label>
+                    <select id="status-select">
+                        <option value="available">Available</option>
+                        <option value="break">On Break</option>
+                        <option value="offline">Offline</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="rpngc-sidebar-section">
+                <h3>Incident Queue</h3>
+                <div id="incident-queue"></div>
+            </div>
+
+            <div class="rpngc-sidebar-section" id="active-incident-section" style="display: none;">
+                <h3>Active Incident</h3>
+                <div id="active-incident-info"></div>
+                <button class="btn btn-green" id="close-incident-btn" style="margin-top: 10px;">Mark Resolved</button>
+            </div>
+
+            <div class="rpngc-sidebar-section" id="messaging-section" style="display: none;">
+                <h3>Chat with Citizen</h3>
+                <div id="message-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 10px; padding: 8px; background: #f7f9fc; border-radius: 5px;"></div>
+                <div class="form-group" style="margin-bottom: 8px;">
+                    <input type="text" id="message-input" placeholder="Type a message..." maxlength="300">
+                </div>
+                <button class="btn btn-blue" id="send-message-btn">Send</button>
+            </div>
+        </aside>
+
+        <div id="map"></div>
+    </div>
+
+    <script>
+        const socket = io();
+        let map, officerMarker;
+        let officerData = null;
+        let token = null;
+        let currentIncidentId = null;
+        let currentCitizenId = null;
+        let pendingIncidents = [];
+
+        // Login
+        document.getElementById('login-btn').addEventListener('click', async () => {
+            const badge = document.getElementById('badge-input').value.trim();
+            const password = document.getElementById('password-input').value;
+            
+            try {
+                const res = await fetch('/auth/officer/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ badgeNumber: badge, password })
+                });
+                const data = await res.json();
+                
+                if (!res.ok) throw new Error(data.error);
+                
+                token = data.token;
+                officerData = { userId: data.userId, displayName: data.displayName, badgeNumber: badge };
+                
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('main-header').style.display = 'flex';
+                document.getElementById('main-layout').style.display = 'flex';
+                document.getElementById('officer-name').textContent = data.displayName;
+                
+                initializeOfficerPortal();
+            } catch (err) {
+                document.getElementById('login-error').textContent = err.message;
+            }
+        });
+
+        document.getElementById('password-input').addEventListener('keypress', e => {
+            if (e.key === 'Enter') document.getElementById('login-btn').click();
+        });
+
+        async function initializeOfficerPortal() {
+            // Initialize map
+            map = L.map('map').setView([-9.4438, 147.1803], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Get officer details
+            const res = await fetch(`/officers/info?userId=${officerData.userId}`);
+            const info = await res.json();
+            const officer = info.officerDetails;
+
+            document.getElementById('profile-card').innerHTML = `
+                <strong>Name:</strong> ${officer.displayName}<br>
+                <strong>Badge:</strong> ${officer.badgeNumber}<br>
+                <strong>Rank:</strong> ${officer.rank}<br>
+                <strong>Station:</strong> ${officer.station}
+            `;
+
+            // Auto-set to available on login
+            await fetch('/officers/status', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: 'available' })
+            });
+            document.getElementById('status-select').value = 'available';
+
+            // Join socket room
+            socket.emit('join', { userId: officerData.userId, role: 'officer' });
+
+            // Load pending incidents
+            loadPendingIncidents();
+
+            // Track location
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(position => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    if (!officerMarker) {
+                        officerMarker = L.marker([lat, lng], {
+                            icon: L.divIcon({
+                                className: 'custom-marker',
+                                html: '<div style="background: #0057B8; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>',
+                                iconSize: [22, 22],
+                                iconAnchor: [11, 11]
+                            })
+                        }).addTo(map).bindPopup('Your Location');
+                        map.setView([lat, lng], 15);
+                    } else {
+                        officerMarker.setLatLng([lat, lng]);
+                    }
+
+                    socket.emit('location-update', {
+                        officerId: officerData.userId,
+                        displayName: officerData.displayName,
+                        latitude: lat,
+                        longitude: lng
+                    });
+                });
+            }
+
+            // Status change
+            document.getElementById('status-select').addEventListener('change', e => {
+                socket.emit('officer-status', {
+                    officerId: officerData.userId,
+                    status: e.target.value
+                });
+            });
+
+            // Listen for incidents
+            socket.on('request-assistance', data => {
+                pendingIncidents.push(data);
+                renderIncidentQueue();
+            });
+
+            // Close incident
+            document.getElementById('close-incident-btn').addEventListener('click', () => {
+                const notes = prompt('Resolution notes (optional):') || 'Incident resolved';
+                socket.emit('incident-closed', {
+                    incidentId: currentIncidentId,
+                    officerId: officerData.userId,
+                    citizenId: currentCitizenId,
+                    resolutionNotes: notes
+                });
+                currentIncidentId = null;
+                currentCitizenId = null;
+                document.getElementById('active-incident-section').style.display = 'none';
+                document.getElementById('messaging-section').style.display = 'none';
+                document.getElementById('status-select').value = 'available';
+                
+                // Trigger status update to become available for new requests
+                socket.emit('officer-status', {
+                    officerId: officerData.userId,
+                    status: 'available'
+                });
+            });
+
+            // Messaging
+            document.getElementById('send-message-btn').addEventListener('click', sendMessage);
+            document.getElementById('message-input').addEventListener('keypress', e => {
+                if (e.key === 'Enter') sendMessage();
+            });
+
+            socket.on('new-message', data => {
+                const msgList = document.getElementById('message-list');
+                const msgDiv = document.createElement('div');
+                msgDiv.style.marginBottom = '8px';
+                msgDiv.style.padding = '6px 10px';
+                msgDiv.style.borderRadius = '4px';
+                msgDiv.style.fontSize = '0.83rem';
+                
+                if (data.senderRole === 'officer') {
+                    msgDiv.style.background = '#e8f0fe';
+                    msgDiv.style.textAlign = 'right';
+                    msgDiv.innerHTML = `<strong>You:</strong> ${data.text}`;
+                } else {
+                    msgDiv.style.background = '#f0f0f0';
+                    msgDiv.innerHTML = `<strong>Citizen:</strong> ${data.text}`;
+                }
+                
+                msgList.appendChild(msgDiv);
+                msgList.scrollTop = msgList.scrollHeight;
+            });
+        }
+
+        async function loadPendingIncidents() {
+            try {
+                const res = await fetch('/incidents/pending');
+                const data = await res.json();
+                
+                if (data.incidents && data.incidents.length > 0) {
+                    data.incidents.forEach(inc => {
+                        pendingIncidents.push({
+                            incidentId: inc._id,
+                            citizenId: inc.citizenId,
+                            citizenPhone: inc.citizenPhone,
+                            incidentType: inc.incidentType,
+                            urgency: inc.urgency,
+                            description: inc.description || 'No description',
+                            isSOS: inc.isSOS,
+                            location: {
+                                latitude: inc.location.coordinates[1],
+                                longitude: inc.location.coordinates[0]
+                            }
+                        });
+                    });
+                    renderIncidentQueue();
+                }
+            } catch (err) {
+                console.error('Failed to load pending incidents:', err);
+            }
+        }
+
+        function renderIncidentQueue() {
+            const queue = document.getElementById('incident-queue');
+            if (pendingIncidents.length === 0) {
+                queue.innerHTML = '<div class="notification info">No pending incidents</div>';
+                return;
+            }
+
+            queue.innerHTML = '<ul class="incident-list">' + pendingIncidents.map((inc, idx) => `
+                <li class="incident-item" onclick="acceptIncident(${idx})">
+                    <div class="inc-type">
+                        ${inc.isSOS ? '[SOS] ' : ''}${inc.incidentType}
+                        <span class="badge-urgency urgency-${inc.urgency}">${inc.urgency}</span>
+                    </div>
+                    <div class="inc-addr">${inc.description || 'No description'}</div>
+                    <div class="inc-meta">Click to accept</div>
+                </li>
+            `).join('') + '</ul>';
+        }
+
+        function acceptIncident(idx) {
+            const incident = pendingIncidents[idx];
+            currentIncidentId = incident.incidentId;
+            currentCitizenId = incident.citizenId;
+
+            socket.emit('incident-accepted', {
+                incidentId: incident.incidentId,
+                officerId: officerData.userId,
+                citizenId: incident.citizenId,
+                officerDetails: {
+                    officerName: officerData.displayName,
+                    officerBadge: officerData.badgeNumber,
+                    officerLocation: officerMarker ? {
+                        lat: officerMarker.getLatLng().lat,
+                        lng: officerMarker.getLatLng().lng
+                    } : null
+                }
+            });
+
+            pendingIncidents.splice(idx, 1);
+            renderIncidentQueue();
+
+            document.getElementById('active-incident-info').innerHTML = `
+                <div class="notification success">Incident accepted</div>
+                <div class="profile-card" style="margin-top: 10px;">
+                    <strong>Type:</strong> ${incident.incidentType}<br>
+                    <strong>Urgency:</strong> <span class="badge-urgency urgency-${incident.urgency}">${incident.urgency}</span><br>
+                    <strong>Phone:</strong> ${incident.citizenPhone || 'N/A'}<br>
+                    <strong>Description:</strong> ${incident.description || 'N/A'}
+                </div>
+            `;
+            document.getElementById('active-incident-section').style.display = 'block';
+            document.getElementById('messaging-section').style.display = 'block';
+            document.getElementById('status-select').value = 'busy';
+
+            // Add citizen marker
+            if (incident.location) {
+                L.marker([incident.location.latitude, incident.location.longitude], {
+                    icon: L.divIcon({
+                        className: 'custom-marker',
+                        html: '<div style="background: #C8102E; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>',
+                        iconSize: [22, 22],
+                        iconAnchor: [11, 11]
+                    })
+                }).addTo(map).bindPopup('Incident Location');
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            if (!text || !currentIncidentId) return;
+
+            socket.emit('send-message', {
+                incidentId: currentIncidentId,
+                senderId: officerData.userId,
+                senderRole: 'officer',
+                recipientId: currentCitizenId,
+                text: text
+            });
+            input.value = '';
+        }
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            if (confirm('Logout?')) location.href = '/';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>RPNGC | Emergency Dispatch System</title>
+    <link rel="stylesheet" href="/css/rpngc.css"/>
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #eef1f7;
+        }
+
+        .landing-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 24px;
+        }
+
+        .landing-intro {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .landing-intro h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--rpngc-blue-dark);
+            margin-bottom: 8px;
+        }
+
+        .landing-intro p {
+            color: #666;
+            font-size: 0.92rem;
+        }
+
+        .portal-grid {
+            display: flex;
+            gap: 28px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .portal-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 32px 28px 28px;
+            width: 260px;
+            text-align: center;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--rpngc-text);
+            transition: transform 0.16s, box-shadow 0.16s;
+            border-top: 4px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .portal-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+        }
+
+        .portal-card.citizen { border-top-color: var(--rpngc-red); }
+        .portal-card.officer { border-top-color: var(--rpngc-blue); }
+        .portal-card.hq      { border-top-color: var(--rpngc-blue-dark); }
+
+        .portal-icon {
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
+            margin-bottom: 18px;
+        }
+
+        .portal-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            margin-bottom: 8px;
+        }
+
+        .citizen .portal-label { color: var(--rpngc-red); }
+        .officer .portal-label { color: var(--rpngc-blue); }
+        .hq      .portal-label { color: var(--rpngc-blue-dark); }
+
+        .portal-card h2 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--rpngc-blue-dark);
+            margin-bottom: 10px;
+        }
+
+        .portal-card p {
+            font-size: 0.82rem;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+
+        .portal-divider {
+            border: none;
+            border-top: 1px solid #eef0f7;
+            width: 100%;
+            margin: 18px 0 14px;
+        }
+
+        .citizen-id-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .citizen-id-row input {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #ccd3e0;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.2s;
+            text-align: center;
+        }
+
+        .citizen-id-row input:focus { border-color: var(--rpngc-red); }
+
+        .portal-btn {
+            display: block;
+            width: 100%;
+            padding: 10px 0;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #fff;
+            text-align: center;
+            border: none;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            text-decoration: none;
+            margin-top: 10px;
+        }
+
+        .portal-btn:hover { opacity: 0.88; }
+        .citizen .portal-btn { background: var(--rpngc-red); }
+        .officer .portal-btn { background: var(--rpngc-blue); }
+        .hq      .portal-btn { background: var(--rpngc-blue-dark); }
+
+        footer {
+            text-align: center;
+            padding: 18px;
+            font-size: 0.76rem;
+            color: #aaa;
+            border-top: 1px solid #dde3f0;
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+
+<header class="rpngc-header">
+    <img src="/images/logo.jpg" alt="RPNGC Logo"/>
+    <div>
+        <h1>Royal Papua New Guinea Constabulary</h1>
+        <p>Emergency Dispatch System</p>
+    </div>
+</header>
+
+<div class="landing-body">
+    <div class="landing-intro">
+        <h2>Select Your Portal</h2>
+        <p>Access the appropriate portal based on your role within the system.</p>
+    </div>
+
+    <div class="portal-grid">
+
+        <!-- Citizen -->
+        <div class="portal-card citizen">
+            <img src="/images/civilians.png" alt="Citizen" class="portal-icon"/>
+            <div class="portal-label">Public Access</div>
+            <h2>Citizen Portal</h2>
+            <p>Request emergency assistance from your nearest constabulary officer.</p>
+            <hr class="portal-divider"/>
+            <div class="citizen-id-row">
+                <input type="text" id="citizenId" placeholder="Your name or ID number"/>
+                <div class="portal-btn" onclick="gotoCitizen()">Request Assistance</div>
+            </div>
+        </div>
+
+        <!-- Officer -->
+        <a href="/officer.html" class="portal-card officer">
+            <img src="/images/officer.png" alt="Officer" class="portal-icon"/>
+            <div class="portal-label">Constabulary Officer</div>
+            <h2>Officer Portal</h2>
+            <p>Log in with your badge number and password to receive and respond to incident requests.</p>
+            <hr class="portal-divider"/>
+            <span class="portal-btn">Officer Login</span>
+        </a>
+
+        <!-- HQ -->
+        <a href="/hq.html" class="portal-card hq">
+            <img src="/images/HQ.png" alt="HQ Command" class="portal-icon"/>
+            <div class="portal-label">Command &amp; Control</div>
+            <h2>HQ Dashboard</h2>
+            <p>Authorised command personnel only. Monitor all active incidents and officer positions.</p>
+            <hr class="portal-divider"/>
+            <span class="portal-btn">HQ Login</span>
+        </a>
+
+    </div>
+</div>
+
+<footer>
+    &copy; Royal Papua New Guinea Constabulary &mdash | Emergency Dispatch System &mdash | Authorised Use Only
+<P>built by Benjamin Bino</P>
+</footer>
+
+<script>
+    function gotoCitizen() {
+        const id = document.getElementById('citizenId').value.trim();
+        const userId = id || 'citizen-' + Date.now();
+        window.location.href = `/citizen.html?userId=${encodeURIComponent(userId)}`;
+    }
+
+    document.getElementById('citizenId').addEventListener('keydown', e => {
+        if (e.key === 'Enter') gotoCitizen();
+    });
+</script>
+</body>
+</html>

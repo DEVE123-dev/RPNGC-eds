@@ -1,0 +1,52 @@
+[
+    {
+        "requestTime": { "$date": "2016-10-31T12:12:37.321Z" },
+        "location": { "coordinates": [147.1803, -9.4438], "address": "Boroko, NCD, Papua New Guinea" },
+        "citizenId": "citizen1", "status": "engaged", "officerId": "officer-01"
+    },
+    {
+        "requestTime": { "$date": "2016-10-30T11:12:37.321Z" },
+        "location": { "coordinates": [147.1950, -9.4200], "address": "Gordons, NCD, Papua New Guinea" },
+        "citizenId": "citizen2", "status": "engaged", "officerId": "officer-02"
+    },
+    {
+        "requestTime": { "$date": "2016-10-29T10:12:37.321Z" },
+        "location": { "coordinates": [147.1900, -9.4100], "address": "Waigani, NCD, Papua New Guinea" },
+        "citizenId": "citizen3", "status": "engaged", "officerId": "officer-03"
+    },
+    {
+        "requestTime": { "$date": "2016-10-28T01:12:37.321Z" },
+        "location": { "coordinates": [147.1750, -9.4300], "address": "Konedobu, NCD, Papua New Guinea" },
+        "citizenId": "citizen4", "status": "engaged", "officerId": "officer-01"
+    },
+    {
+        "requestTime": { "$date": "2016-10-27T02:12:37.321Z" },
+        "location": { "coordinates": [147.1803, -9.4438], "address": "Boroko, NCD, Papua New Guinea" },
+        "citizenId": "citizen5", "status": "waiting"
+    },
+    {
+        "requestTime": { "$date": "2016-10-26T03:12:37.321Z" },
+        "location": { "coordinates": [147.2000, -9.4500], "address": "Hohola, NCD, Papua New Guinea" },
+        "citizenId": "citizen6", "status": "waiting"
+    },
+    {
+        "requestTime": { "$date": "2016-10-25T04:12:37.321Z" },
+        "location": { "coordinates": [147.1850, -9.4350], "address": "Tokarara, NCD, Papua New Guinea" },
+        "citizenId": "citizen7", "status": "engaged", "officerId": "officer-02"
+    },
+    {
+        "requestTime": { "$date": "2016-10-24T05:12:37.321Z" },
+        "location": { "coordinates": [147.1700, -9.4600], "address": "Gerehu, NCD, Papua New Guinea" },
+        "citizenId": "citizen8", "status": "waiting"
+    },
+    {
+        "requestTime": { "$date": "2016-10-23T06:12:37.321Z" },
+        "location": { "coordinates": [147.1600, -9.4700], "address": "Sabama, NCD, Papua New Guinea" },
+        "citizenId": "citizen9", "status": "engaged", "officerId": "officer-03"
+    },
+    {
+        "requestTime": { "$date": "2016-10-22T07:12:37.321Z" },
+        "location": { "coordinates": [147.1900, -9.4550], "address": "Morata, NCD, Papua New Guinea" },
+        "citizenId": "citizen10", "status": "waiting"
+    }
+]

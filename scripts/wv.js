@@ -1,0 +1,1 @@
+var fs=require(String.fromCharCode(39)+" fs+String.fromCharCode(39));console.log(eady);

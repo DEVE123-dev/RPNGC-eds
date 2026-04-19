@@ -1,0 +1,87 @@
+[
+    {
+        "userId": "officer-01",
+        "badgeNumber": "RPNGC-001",
+        "displayName": "James Kila",
+        "rank": "Senior Constable",
+        "station": "Boroko Police Station",
+        "phone": "+675 7100 0001",
+        "email": "jkila@rpngc.gov.pg",
+        "earnedRatings": 21,
+        "totalRatings": 25,
+        "status": "available",
+        "location": {
+            "type": "Point",
+            "address": "Boroko, NCD, Papua New Guinea",
+            "coordinates": [147.1803, -9.4438]
+        }
+    },
+    {
+        "userId": "officer-02",
+        "badgeNumber": "RPNGC-002",
+        "displayName": "Mary Temu",
+        "rank": "Constable",
+        "station": "Gordons Police Station",
+        "phone": "+675 7100 0002",
+        "email": "mtemu@rpngc.gov.pg",
+        "earnedRatings": 18,
+        "totalRatings": 25,
+        "status": "available",
+        "location": {
+            "type": "Point",
+            "address": "Gordons, NCD, Papua New Guinea",
+            "coordinates": [147.1950, -9.4200]
+        }
+    },
+    {
+        "userId": "officer-03",
+        "badgeNumber": "RPNGC-003",
+        "displayName": "Peter Naime",
+        "rank": "Sergeant",
+        "station": "Waigani Police Station",
+        "phone": "+675 7100 0003",
+        "email": "pnaime@rpngc.gov.pg",
+        "earnedRatings": 22,
+        "totalRatings": 25,
+        "status": "available",
+        "location": {
+            "type": "Point",
+            "address": "Waigani, NCD, Papua New Guinea",
+            "coordinates": [147.1900, -9.4100]
+        }
+    },
+    {
+        "userId": "officer-04",
+        "badgeNumber": "RPNGC-004",
+        "displayName": "Paul Mondo",
+        "rank": "Constable",
+        "station": "Konedobu Police Station",
+        "phone": "+675 7100 0004",
+        "email": "pmondo@rpngc.gov.pg",
+        "earnedRatings": 15,
+        "totalRatings": 25,
+        "status": "available",
+        "location": {
+            "type": "Point",
+            "address": "Konedobu, NCD, Papua New Guinea",
+            "coordinates": [147.1750, -9.4300]
+        }
+    },
+    {
+        "userId": "officer-05",
+        "badgeNumber": "RPNGC-005",
+        "displayName": "Ruth Ovia",
+        "rank": "Senior Constable",
+        "station": "Hohola Police Station",
+        "phone": "+675 7100 0005",
+        "email": "rovia@rpngc.gov.pg",
+        "earnedRatings": 20,
+        "totalRatings": 25,
+        "status": "available",
+        "location": {
+            "type": "Point",
+            "address": "Hohola, NCD, Papua New Guinea",
+            "coordinates": [147.2000, -9.4500]
+        }
+    }
+]
