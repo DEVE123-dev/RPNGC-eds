@@ -19,16 +19,33 @@ app.set('view engine', 'html');
 app.engine('html', consolidate.handlebars);
 
 const db = process.env.MONGO_URI || 'mongodb://localhost:27017/rpngc';
-mongoose.connect(db, { useNewUrlParser: true, useUnifiedTopology: true, tls: true })
-    .then(() => console.log('Connected to MongoDB: rpngc'))
-    .catch(err => console.error('MongoDB connection error:', err));
+const isProduction = process.env.NODE_ENV === 'production';
+
+mongoose.connect(db)
+    .then(() => console.log(`Connected to MongoDB: rpngc (${process.env.NODE_ENV || 'development'})`))
+    .catch(err => {
+        console.error('MongoDB connection error:', err);
+        process.exit(1);
+    });
 
 app.use('/', routes);
 
 const server = http.Server(app);
 const PORT = process.env.PORT || 8000;
 
-server.listen(PORT, () => {
-    console.log(`RPNGC Dispatch running at http://localhost:${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`RPNGC Dispatch running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     socketEvents.initialize(server);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('SIGTERM received, closing server gracefully...');
+    server.close(() => {
+        mongoose.connection.close(false, () => {
+            console.log('MongoDB connection closed');
+            process.exit(0);
+        });
+    });
 });
