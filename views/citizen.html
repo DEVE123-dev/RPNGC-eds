@@ -20,7 +20,8 @@
     </header>
 
     <div class="rpngc-layout">
-        <aside class="rpngc-sidebar">
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">☰</button>
+        <aside class="rpngc-sidebar" id="sidebar">
             <div class="rpngc-sidebar-section">
                 <h3>Request Assistance</h3>
                 <div id="request-form">
@@ -253,6 +254,18 @@
             document.body.appendChild(notif);
             setTimeout(() => notif.remove(), 4000);
         }
+
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-toggle').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('open');
+        });
+
+        // Close sidebar when clicking on map (mobile)
+        document.getElementById('map').addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('open');
+            }
+        });
     </script>
 </body>
 </html>

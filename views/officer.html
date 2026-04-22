@@ -39,7 +39,8 @@
     </header>
 
     <div class="rpngc-layout" style="display: none;" id="main-layout">
-        <aside class="rpngc-sidebar">
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">☰</button>
+        <aside class="rpngc-sidebar" id="sidebar">
             <div class="rpngc-sidebar-section">
                 <h3>Officer Profile</h3>
                 <div class="profile-card" id="profile-card"></div>
@@ -120,7 +121,7 @@
         });
 
         async function initializeOfficerPortal() {
-            // Initialize map
+            // Initialize map with default view (will update with actual location)
             map = L.map('map').setView([-9.4438, 147.1803], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
@@ -155,23 +156,44 @@
             // Load pending incidents
             loadPendingIncidents();
 
-            // Track location
+            // Track location - USE PHONE GPS
             if (navigator.geolocation) {
+                // Get initial position immediately
+                navigator.geolocation.getCurrentPosition(position => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    // Center map on officer's actual location
+                    map.setView([lat, lng], 15);
+                    
+                    // Create officer marker at actual location
+                    officerMarker = L.marker([lat, lng], {
+                        icon: L.divIcon({
+                            className: 'custom-marker',
+                            html: '<div style="background: #0057B8; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>',
+                            iconSize: [22, 22],
+                            iconAnchor: [11, 11]
+                        })
+                    }).addTo(map).bindPopup('Your Location');
+
+                    // Send initial location to server
+                    socket.emit('location-update', {
+                        officerId: officerData.userId,
+                        displayName: officerData.displayName,
+                        latitude: lat,
+                        longitude: lng
+                    });
+                }, error => {
+                    console.error('Geolocation error:', error);
+                    alert('Unable to get your location. Please enable location services.');
+                });
+
+                // Then watch for position changes
                 navigator.geolocation.watchPosition(position => {
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
                     
-                    if (!officerMarker) {
-                        officerMarker = L.marker([lat, lng], {
-                            icon: L.divIcon({
-                                className: 'custom-marker',
-                                html: '<div style="background: #0057B8; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>',
-                                iconSize: [22, 22],
-                                iconAnchor: [11, 11]
-                            })
-                        }).addTo(map).bindPopup('Your Location');
-                        map.setView([lat, lng], 15);
-                    } else {
+                    if (officerMarker) {
                         officerMarker.setLatLng([lat, lng]);
                     }
 
@@ -181,7 +203,15 @@
                         latitude: lat,
                         longitude: lng
                     });
+                }, error => {
+                    console.error('Location tracking error:', error);
+                }, {
+                    enableHighAccuracy: true,
+                    maximumAge: 10000,
+                    timeout: 5000
                 });
+            } else {
+                alert('Geolocation is not supported by your device.');
             }
 
             // Status change
@@ -360,6 +390,18 @@
 
         document.getElementById('logout-btn').addEventListener('click', () => {
             if (confirm('Logout?')) location.href = '/';
+        });
+
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-toggle').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('open');
+        });
+
+        // Close sidebar when clicking on map (mobile)
+        document.getElementById('map').addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('open');
+            }
         });
     </script>
 </body>
